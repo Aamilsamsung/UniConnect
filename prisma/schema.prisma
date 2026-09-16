@@ -1,0 +1,138 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum UserRole { STUDENT MODERATOR UNIVERSITY_ADMIN SUPER_ADMIN }
+enum VerificationStatus { PENDING VERIFIED SUSPENDED }
+enum MembershipRole { MEMBER MODERATOR ADMIN }
+enum FriendshipStatus { PENDING ACCEPTED REJECTED BLOCKED }
+enum Discoverability { UNIVERSITY_ONLY CONNECTIONS_ONLY ANYONE }
+enum PermissionLevel { EVERYONE UNIVERSITY_ONLY CONNECTIONS_ONLY NOBODY }
+
+model University {
+  id String @id @default(uuid())
+  name String
+  verificationStatus VerificationStatus @default(PENDING)
+  domains UniversityDomain[]
+  users User[]
+  communities Community[]
+  events Event[]
+  posts Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UniversityDomain {
+  id String @id @default(uuid())
+  universityId String
+  domain String @unique
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@index([universityId])
+}
+
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  username String @unique
+  name String
+  passwordHash String
+  universityId String
+  university University @relation(fields:[universityId], references:[id])
+  role UserRole @default(STUDENT)
+  emailVerifiedAt DateTime?
+  profileDiscoverability Discoverability @default(UNIVERSITY_ONLY)
+  friendRequestPolicy PermissionLevel @default(UNIVERSITY_ONLY)
+  messagePolicy PermissionLevel @default(CONNECTIONS_ONLY)
+  onlineStatusPolicy PermissionLevel @default(CONNECTIONS_ONLY)
+  activityVisibility Discoverability @default(UNIVERSITY_ONLY)
+  communities CommunityMember[]
+  posts Post[]
+  events EventAttendee[]
+  sentConnections Connection[] @relation("ConnectionFrom")
+  receivedConnections Connection[] @relation("ConnectionTo")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([universityId])
+  @@index([username])
+}
+
+model Connection {
+  id String @id @default(uuid())
+  fromUserId String
+  toUserId String
+  status FriendshipStatus @default(PENDING)
+  fromUser User @relation("ConnectionFrom", fields:[fromUserId], references:[id], onDelete:Cascade)
+  toUser User @relation("ConnectionTo", fields:[toUserId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([fromUserId,toUserId])
+  @@index([toUserId,status])
+}
+
+model Community {
+  id String @id @default(uuid())
+  universityId String
+  name String
+  slug String
+  description String
+  isPrivate Boolean @default(true)
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  members CommunityMember[]
+  posts Post[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([universityId,slug])
+  @@index([universityId,createdAt])
+}
+
+model CommunityMember {
+  id String @id @default(uuid())
+  communityId String
+  userId String
+  role MembershipRole @default(MEMBER)
+  community Community @relation(fields:[communityId], references:[id], onDelete:Cascade)
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([communityId,userId])
+  @@index([userId])
+}
+
+model Post {
+  id String @id @default(uuid())
+  universityId String
+  authorId String
+  communityId String?
+  content String
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  author User @relation(fields:[authorId], references:[id], onDelete:Cascade)
+  community Community? @relation(fields:[communityId], references:[id], onDelete:SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([universityId,createdAt])
+  @@index([authorId,createdAt])
+  @@index([communityId,createdAt])
+}
+
+model Event {
+  id String @id @default(uuid())
+  universityId String
+  title String
+  description String
+  startsAt DateTime
+  location String?
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  attendees EventAttendee[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([universityId,startsAt])
+}
+
+model EventAttendee {
+  id String @id @default(uuid())
+  eventId String
+  userId String
+  event Event @relation(fields:[eventId], references:[id], onDelete:Cascade)
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([eventId,userId])
+}
