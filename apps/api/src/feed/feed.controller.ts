@@ -23,6 +23,15 @@ export class FeedController {
   @Post()
   create(@Req() req: AuthRequest, @Body() dto: CreatePostDto) { return this.feed.create(req.user, dto); }
 
+  @Get(':id/comments')
+  comments(@Req() req: AuthRequest, @Param('id') id: string) { return this.feed.comments(req.user, id); }
+
+  @Post(':id/comments')
+  comment(@Req() req: AuthRequest, @Param('id') id: string, @Body() dto: CreatePostDto) { return this.feed.addComment(req.user, id, dto.content); }
+
+  @Post(':id/reaction')
+  react(@Req() req: AuthRequest, @Param('id') id: string) { return this.feed.react(req.user, id); }
+
   @Delete(':id')
   remove(@Req() req: AuthRequest, @Param('id') id: string) { return this.feed.remove(req.user, id); }
 }
