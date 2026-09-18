@@ -52,6 +52,42 @@ export class FeedService {
     });
   }
 
+  async comments(user: AuthUser, postId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { universityId: true } });
+    if (!post) throw new NotFoundException('Post not found.');
+    assertUniversityAccess(user, post.universityId);
+    return this.prisma.comment.findMany({
+      where: { postId, universityId: user.universityId },
+      orderBy: { createdAt: 'asc' },
+      include: { author: { select: { id: true, username: true, name: true } } },
+    });
+  }
+
+  async addComment(user: AuthUser, postId: string, content: string) {
+    const text = content.trim();
+    if (!text) throw new BadRequestException('Comment content is required.');
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { id: true, universityId: true } });
+    if (!post) throw new NotFoundException('Post not found.');
+    assertUniversityAccess(user, post.universityId);
+    return this.prisma.comment.create({
+      data: { postId, authorId: user.id, universityId: user.universityId, content: text },
+      include: { author: { select: { id: true, username: true, name: true } } },
+    });
+  }
+
+  async react(user: AuthUser, postId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId }, select: { id: true, universityId: true } });
+    if (!post) throw new NotFoundException('Post not found.');
+    assertUniversityAccess(user, post.universityId);
+    const existing = await this.prisma.postReaction.findUnique({ where: { postId_userId: { postId, userId: user.id } } });
+    if (existing) {
+      await this.prisma.postReaction.delete({ where: { id: existing.id } });
+      return { reacted: false };
+    }
+    await this.prisma.postReaction.create({ data: { postId, userId: user.id, universityId: user.universityId } });
+    return { reacted: true };
+  }
+
   async remove(user: AuthUser, postId: string) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
