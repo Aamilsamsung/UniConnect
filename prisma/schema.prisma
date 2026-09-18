@@ -47,6 +47,10 @@ model User {
   activityVisibility Discoverability @default(UNIVERSITY_ONLY)
   communities CommunityMember[]
   posts Post[]
+  comments Comment[]
+  postReactions PostReaction[]
+  following Follow[] @relation("Following")
+  followers Follow[] @relation("Followers")
   events EventAttendee[]
   sentConnections Connection[] @relation("ConnectionFrom")
   receivedConnections Connection[] @relation("ConnectionTo")
@@ -106,6 +110,8 @@ model Post {
   university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
   author User @relation(fields:[authorId], references:[id], onDelete:Cascade)
   community Community? @relation(fields:[communityId], references:[id], onDelete:SetNull)
+  comments Comment[]
+  reactions PostReaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([universityId,createdAt])
@@ -135,4 +141,45 @@ model EventAttendee {
   user User @relation(fields:[userId], references:[id], onDelete:Cascade)
   createdAt DateTime @default(now())
   @@unique([eventId,userId])
+}
+
+
+model Comment {
+  id String @id @default(uuid())
+  postId String
+  authorId String
+  universityId String
+  content String
+  post Post @relation(fields:[postId], references:[id], onDelete:Cascade)
+  author User @relation(fields:[authorId], references:[id], onDelete:Cascade)
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId,createdAt])
+  @@index([universityId,createdAt])
+}
+
+model PostReaction {
+  id String @id @default(uuid())
+  postId String
+  userId String
+  universityId String
+  type String @default("LIKE")
+  post Post @relation(fields:[postId], references:[id], onDelete:Cascade)
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  university University @relation(fields:[universityId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([postId,userId])
+  @@index([universityId,createdAt])
+}
+
+model Follow {
+  id String @id @default(uuid())
+  followerId String
+  followingId String
+  follower User @relation("Following", fields:[followerId], references:[id], onDelete:Cascade)
+  following User @relation("Followers", fields:[followingId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  @@unique([followerId,followingId])
+  @@index([followingId])
 }
