@@ -8,9 +8,10 @@ import { EventsModule } from './events/events.module';
 import { ConnectionsModule } from './connections/connections.module';
 import { HealthController } from './health.controller';
 import { FollowsModule } from './connections/follows.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
-  imports: [AuthModule, CommunitiesModule, FeedModule, ProfilesModule, EventsModule, ConnectionsModule, FollowsModule],
+  imports: [AuthModule, CommunitiesModule, FeedModule, ProfilesModule, EventsModule, ConnectionsModule, FollowsModule, MessagesModule],
   controllers: [HealthController],
   providers: [PrismaService],
   exports: [PrismaService],
