@@ -42,7 +42,7 @@ export default function LoginPage() {
       <label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required /></label>
       <label>Password<input type="password" value={password} onChange={e=>setPassword(e.target.value)} minLength={8} required /></label>
       {error && <p className="error">{error}</p>}
-      <button className="primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+      <button className="primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button><a className="linkButton" href="/register">Create a university account</a>
     </form>
   </main>;
 }
