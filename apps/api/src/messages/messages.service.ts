@@ -1,7 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { AuthUser } from '../auth/auth.types';
-import { ConnectionStatus } from '@prisma/client';
 
 @Injectable()
 export class MessagesService {
@@ -22,7 +21,7 @@ export class MessagesService {
   }
 
   async createDirect(user: AuthUser, username: string) {
-    const target = await this.prisma.user.findUnique({ where:{username:username.trim()}, select:{id:true,universityId:true,username:true,name:true} });
+    const target = await this.prisma.user.findUnique({ where:{username:username.trim()}, select:{id:true,universityId:true,username:true,name:true,messagePolicy:true} });
     if (!target || target.id === user.id) throw new NotFoundException('User not found.');
     if (target.messagePolicy === 'NOBODY') throw new ForbiddenException('This user does not accept messages.');
     if (target.messagePolicy === 'UNIVERSITY_ONLY' && target.universityId !== user.universityId) throw new ForbiddenException('This user only accepts university messages.');
